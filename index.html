@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Module 3 | Visual Libraries | PixiJS</title>
+</head>
+<body>
+<game id="game"></game>
+<!-- Load in the PixiJS -->
+<script src="https://pixijs.download/release/pixi.min.js"></script>
+<!-- Our ES6 code goes here as a type="module" -->
+<script type="module">
+    // We first need to create a new PixiJS application instance
+    const app = new PIXI.Application();
+    // Now we need to call an asynchronous method on our PixiJS
+    // application called "init" which initializes our display
+    // using a defined width and height measured in pixels.
+    await app.init({
+        backgroundColor: "#3398b9",
+        width: 800,
+        height: 800
+    });
+    // Now all we need to do is to tell PixiJS what HTMLElement
+    // in our DOM we want to show our game using a DOM helper
+    document.getElementById('game').appendChild(app.canvas);
+    // Set up circle
+    const circleRadius = 5;
+    const circle = new PIXI.Graphics();
+    circle.beginFill("#f5ef42");
+    circle.drawCircle(0, 0, circleRadius);
+    circle.endFill();
+    circle.x = 450;
+    circle.y = 400;
+
+    // Velocity (random direction and speed between 2 and 4)
+    function randomVelocity() {
+        const speed = 2 + Math.random() * 2; // speed between 2 and 4
+        const angle = Math.random() * Math.PI * 2; // random angle in radians
+        return {
+            xv: Math.cos(angle) * speed,
+            yv: Math.sin(angle) * speed
+        };
+    }
+
+    const { xv: initialXv, yv: initialYv } = randomVelocity();
+    let xv = initialXv;
+    let yv = initialYv;
+
+    // Draw borders (top, bottom, left, right)
+    const borderThickness = 10;
+    const borderColors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff];
+    const borderGraphics = [
+        // Top
+        new PIXI.Graphics(),
+        // Bottom
+        new PIXI.Graphics(),
+        // Left
+        new PIXI.Graphics(),
+        // Right
+        new PIXI.Graphics()
+    ];
+    borderGraphics[0].beginFill(borderColors[0]).drawRect(0, 0, 800, borderThickness).endFill();
+    borderGraphics[1].beginFill(borderColors[1]).drawRect(0, 800 - borderThickness, 800, borderThickness).endFill();
+    borderGraphics[2].beginFill(borderColors[2]).drawRect(0, 0, borderThickness, 800).endFill();
+    borderGraphics[3].beginFill(borderColors[3]).drawRect(800 - borderThickness, 0, borderThickness, 800).endFill();
+    borderGraphics.forEach(bg => app.stage.addChild(bg));
+
+    // Track which borders have been hit
+    const bordersHit = new Set();
+
+    app.stage.addChild(circle);
+
+    app.ticker.add(() => {
+        // Move the circle
+        circle.x += xv;
+        circle.y += yv;
+
+        // Top border
+        if (circle.y - circleRadius <= borderThickness) {
+            if (!bordersHit.has('top')) {
+                bordersHit.add('top');
+                borderGraphics[0].tint = 0xffffff;
+            }
+            yv *= -1;
+            circle.y = borderThickness + circleRadius; // keep inside
+        }
+        // Bottom border
+        if (circle.y + circleRadius >= 800 - borderThickness) {
+            if (!bordersHit.has('bottom')) {
+                bordersHit.add('bottom');
+                borderGraphics[1].tint = 0xffffff;
+            }
+            yv *= -1;
+            circle.y = 800 - borderThickness - circleRadius; // keep inside
+        }
+        // Left border
+        if (circle.x - circleRadius <= borderThickness) {
+            if (!bordersHit.has('left')) {
+                bordersHit.add('left');
+                borderGraphics[2].tint = 0xffffff;
+            }
+            xv *= -1;
+            circle.x = borderThickness + circleRadius; // keep inside
+        }
+        // Right border
+        if (circle.x + circleRadius >= 800 - borderThickness) {
+            if (!bordersHit.has('right')) {
+                bordersHit.add('right');
+                borderGraphics[3].tint = 0xffffff;
+            }
+            xv *= -1;
+            circle.x = 800 - borderThickness - circleRadius; // keep inside
+        }
+
+        // Game over if all borders hit
+        if (bordersHit.size === 4) {
+            app.ticker.stop();
+            alert('The circle has hit all four borders! Game over.');
+        }
+    });
+
+</script>
+
+</body>
+</html>
